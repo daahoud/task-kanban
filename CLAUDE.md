@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 概要
 タスク管理カンバン。タスクの追加・編集・削除・一覧表示とステータス管理（Todo / InProgress / Done）ができる。
-Next.js + Supabese で構築し、Vercel にデプロイする
+Next.js + Supabase で構築し、Vercel にデプロイする
 `create-next-app` で作成したタスクカンバンアプリです。構成は Next.js 16（App Router）、React 19、TypeScript（strict）、Tailwind CSS v4 です。現状はテンプレートのトップページのみで、カンバン機能はまだ実装されていません。
 
 Next.js 16 は学習データ上の Next.js と API や規約が異なります。コードを書く前に `node_modules/next/dist/docs/` の該当ガイドを確認してください（上記 AGENTS.md 参照）。
@@ -15,7 +15,7 @@ Next.js 16 は学習データ上の Next.js と API や規約が異なります�
 - Next.js (App Router)
 - TypeScript
 - Supabase (データベース)
-- Vitest + Testing Lirary (テスト)
+- Vitest + Testing Library (テスト)
 - Vercel (デプロイ)
 
 ## コマンド
