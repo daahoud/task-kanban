@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 概要
 タスク管理カンバン。タスクの追加・編集・削除・一覧表示とステータス管理（Todo / InProgress / Done）ができる。
 Next.js + Supabase で構築し、Vercel にデプロイする
-`create-next-app` で作成したタスクカンバンアプリです。構成は Next.js 16（App Router）、React 19、TypeScript（strict）、Tailwind CSS v4 です。現状はテンプレートのトップページのみで、カンバン機能はまだ実装されていません。
+`create-next-app` で作成したタスクカンバンアプリです。構成は Next.js 16（App Router）、React 19、TypeScript（strict）、Tailwind CSS v4 です。現状はテンプレートのトップページと Supabase の接続設定のみで、カンバン機能はまだ実装されていません。
 
 Next.js 16 は学習データ上の Next.js と API や規約が異なります。コードを書く前に `node_modules/next/dist/docs/` の該当ガイドを確認してください（上記 AGENTS.md 参照）。
 
@@ -38,6 +38,12 @@ npx vitest run -t "テスト名の一部"         # テスト名で絞り込み
 - **スタイル（Tailwind v4）:** `tailwind.config.*` はありません。テーマは `src/app/globals.css` の `@theme inline` と CSS 変数（`--background` / `--foreground`、ダークモードは `prefers-color-scheme`）で定義し、PostCSS プラグインは `@tailwindcss/postcss` です。フォントは `next/font` の Geist を `layout.tsx` で CSS 変数として読み込んでいます。
 - **テスト:** Vitest と React Testing Library を jsdom 上で使います。設定は `vitest.config.mts` で、`@/*` は Vite の `resolve.tsconfigPaths` で解決します（`vite-tsconfig-paths` プラグインは不要）。テストは `__tests__/` に置いています（`src/app` 内へのコロケーションも可）。
 - **テストの制約:** Vitest は `async` Server Components を扱えません。非同期のサーバーコンポーネントは E2E テストで検証する必要があります。
+- **Supabase:**
+  - プロジェクトは `task-kanban`（ref: `ivgpcxkvieanjqjfrkdi`、リージョン ap-northeast-1）です。プロジェクト情報やテーブル構成は Supabase MCP で確認してください。
+  - 環境変数は `NEXT_PUBLIC_SUPABASE_URL` と `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` の2つです。キー名は `.env.example` に、実際の値は `.env.local`（git 管理外）に書きます。キーは legacy の anon キーではなく publishable キー（`sb_publishable_...`）を使います。
+  - DB へのアクセスは `@/lib/supabase/client` の `createSupabaseClient()` で行います。環境変数は `@/lib/supabase/env` の `getSupabaseEnv()` から読み、未設定なら例外を投げます。モジュールのトップレベルでクライアントを作ると、環境変数がないテストやビルドで失敗するため、関数の中で作ってください。
+  - サーバー起動時に `src/instrumentation.ts` の `register()` が `checkSupabaseConnection()` を実行します。これは `/auth/v1/health` に publishable キーを付けて問い合わせ、URL とキーが有効かを確認します（無効なキーなら 401）。ログは接続失敗時だけ `console.error` で出し、成功時は何も出しません。
+  - テストでは `vi.stubEnv` で環境変数を、`vi.stubGlobal("fetch", ...)` で通信をモックします（`__tests__/checkConnection.test.ts` を参照）。
 - **`@types/node` のバージョン:** `vitest@5` の peer 依存に合わせて `^24` にしています（Node v24 を使用）。下げると `npm install` が ERESOLVE で失敗します。
 
 ## コーディングルール
