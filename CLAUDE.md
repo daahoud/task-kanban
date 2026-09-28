@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 概要
 タスク管理カンバン。タスクの追加・編集・削除・一覧表示とステータス管理（Todo / InProgress / Done）ができる。
 Next.js + Supabase で構築し、Vercel にデプロイする
-`create-next-app` で作成したタスクカンバンアプリです。構成は Next.js 16（App Router）、React 19、TypeScript（strict）、Tailwind CSS v4 です。トップページ（`/`）にカンバンがあり、タスクの一覧・追加・編集・削除とステータス変更ができます。認証はまだありません。
+`create-next-app` で作成したタスクカンバンアプリです。構成は Next.js 16（App Router）、React 19、TypeScript（strict）、Tailwind CSS v4、shadcn/ui です。トップページ（`/`）にカンバンがあり、タスクの一覧・追加・編集・削除とステータス変更ができます。認証はまだありません。
 
 Next.js 16 は学習データ上の Next.js と API や規約が異なります。コードを書く前に `node_modules/next/dist/docs/` の該当ガイドを確認してください（上記 AGENTS.md 参照）。
 
@@ -15,6 +15,7 @@ Next.js 16 は学習データ上の Next.js と API や規約が異なります�
 - Next.js (App Router)
 - TypeScript
 - Supabase (データベース)
+- shadcn/ui（Base UI ベース）+ Tailwind CSS v4 (UI)
 - Vitest + Testing Library (テスト)
 - Vercel (デプロイ)
 
@@ -29,13 +30,21 @@ npm test                          # Vitest（ウォッチモード）
 npx vitest run                    # 全テストを1回実行
 npx vitest run __tests__/page.test.tsx   # 単一ファイル
 npx vitest run -t "テスト名の一部"         # テスト名で絞り込み
+npx shadcn@latest add <name>      # shadcn/ui コンポーネントを src/components/ui/ に追加
 ```
 
 ## 構成と規約
 
 - **ソースは `src/` 配下:** App Router のルートは `src/app/` にあります。パスエイリアス `@/*` は `./src/*` を指します。
 - **型付きルートヘルパー:** `LayoutProps<"/">` などは Next.js が `.next/types` に生成するグローバル型で、import は不要です。`next dev` か `next build` を実行すると生成・更新されます。
-- **スタイル（Tailwind v4）:** `tailwind.config.*` はありません。テーマは `src/app/globals.css` の `@theme inline` と CSS 変数（`--background` / `--foreground`、ダークモードは `prefers-color-scheme`）で定義し、PostCSS プラグインは `@tailwindcss/postcss` です。フォントは `next/font` の Geist を `layout.tsx` で CSS 変数として読み込んでいます。
+- **スタイル（Tailwind v4）:** `tailwind.config.*` はありません。テーマは `src/app/globals.css` の `@theme inline` と CSS 変数で定義し、PostCSS プラグインは `@tailwindcss/postcss` です。CSS 変数は shadcn/ui のトークン（`--background` / `--foreground` / `--primary` / `--muted` / `--border` / `--radius` など、値は oklch）です。ダークモードは `prefers-color-scheme` の `@media` 内で `:root` の変数を上書きしており、`.dark` クラスは使いません。フォントは `next/font` の Geist を `layout.tsx` で CSS 変数（`--font-geist-sans` / `--font-geist-mono`）として読み込み、`@theme inline` の `--font-sans` / `--font-mono` に割り当てています。
+- **shadcn/ui:**
+  - 設定は `components.json` にあります。スタイルは `base-nova`（プリミティブは Radix ではなく `@base-ui/react`）、ベースカラーは neutral、アイコンは `lucide-react` です。
+  - コンポーネントは `npx shadcn@latest add <name>` で `src/components/ui/` に追加します。生成されたファイルは自分のコードとして編集して構いません。アプリ固有のコンポーネント（`KanbanBoard` など）は `src/components/` 直下に置き、`ui/` と混ぜないでください。
+  - クラス名の結合には `@/lib/utils` の `cn()` を使います（shadcn 公式の `cn` パッケージの再エクスポートで、clsx + tailwind-merge の代わりです）。
+  - バリアントは `class-variance-authority`（`cva`）で定義します。アニメーションは `tw-animate-css` です。
+  - `shadcn init` を再実行すると `globals.css` が上書きされ、`--font-sans: var(--font-sans)` という自己参照と `.dark` クラス方式のダークモードに戻ります。再実行したら、この2点を直してください。
+  - 既存のカンバンのコンポーネントはまだ shadcn/ui を使っておらず、Tailwind のクラス（`zinc` 系や `dark:` バリアント）を直接書いています。shadcn/ui に置き換えるときも、テストが依存するロールとアクセシブルネーム（下記）は変えないでください。
 - **カンバンの構成:**
   - `src/app/page.tsx` は見出しと `<KanbanBoard />` を並べるだけの Server Component（`async` なし）です。
   - `src/components/KanbanBoard.tsx`（`"use client"`）が、マウント時に `fetchTasks()` でタスクを読み込み、`useState` で一覧を持ちます。追加・更新・削除のあとは API が返した行でローカルの一覧を書き換えるので、再取得しなくても画面にすぐ反映されます。この方針を崩さないでください。
