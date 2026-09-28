@@ -1,5 +1,8 @@
 "use client";
 
+import { Pencil, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import type { Task, TaskInput } from "@/lib/tasks";
 import TaskForm from "./TaskForm";
 
@@ -21,9 +24,11 @@ export default function TaskCard({
   onDelete,
 }: TaskCardProps) {
   return (
-    <article
+    <Card
+      role="article"
       aria-label={task.title}
-      className="rounded-lg border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
+      size="sm"
+      className="px-3 shadow-xs transition-shadow hover:shadow-md"
     >
       {editing ? (
         <TaskForm
@@ -35,31 +40,40 @@ export default function TaskCard({
           onCancel={onCancelEdit}
         />
       ) : (
-        <>
-          <h3 className="break-words font-medium">{task.title}</h3>
-          {task.description && (
-            <p className="mt-1 whitespace-pre-wrap break-words text-sm text-zinc-600 dark:text-zinc-400">
-              {task.description}
-            </p>
-          )}
-          <div className="mt-3 flex gap-2">
-            <button
-              type="button"
-              onClick={onEdit}
-              className="rounded border border-zinc-300 px-2 py-0.5 text-sm dark:border-zinc-700"
-            >
-              編集
-            </button>
-            <button
-              type="button"
-              onClick={onDelete}
-              className="rounded border border-red-300 px-2 py-0.5 text-sm text-red-600 dark:border-red-800"
-            >
-              削除
-            </button>
+        <div className="flex items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <h3 className="font-medium break-words">{task.title}</h3>
+            {task.description && (
+              <p className="mt-1 text-sm whitespace-pre-wrap break-words text-muted-foreground">
+                {task.description}
+              </p>
+            )}
           </div>
-        </>
+          <div className="-mt-1 -mr-1 flex shrink-0">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label="編集"
+              title="編集"
+              onClick={onEdit}
+            >
+              <Pencil aria-hidden="true" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label="削除"
+              title="削除"
+              onClick={onDelete}
+              className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 aria-hidden="true" />
+            </Button>
+          </div>
+        </div>
       )}
-    </article>
+    </Card>
   );
 }

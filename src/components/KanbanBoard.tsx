@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CircleAlert, LoaderCircle } from "lucide-react";
+import { Alert, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   createTask,
   deleteTask,
@@ -13,7 +17,8 @@ import {
 import ConfirmDialog from "./ConfirmDialog";
 import TaskCard from "./TaskCard";
 import TaskForm from "./TaskForm";
-import { STATUS_LABELS } from "./statusLabels";
+import { cn } from "@/lib/utils";
+import { STATUS_DOT_CLASSES, STATUS_LABELS } from "./statusLabels";
 
 export default function KanbanBoard() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -81,38 +86,54 @@ export default function KanbanBoard() {
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="max-w-md rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-        <h2 className="mb-2 font-semibold">新しいタスク</h2>
-        <TaskForm label="タスクを追加" submitLabel="追加" onSubmit={handleCreate} />
-      </section>
+      <Card className="max-w-xl shadow-xs">
+        <CardHeader>
+          <CardTitle>新しいタスク</CardTitle>
+          <CardDescription>追加したタスクは Todo 列に入ります</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <TaskForm label="タスクを追加" submitLabel="追加" onSubmit={handleCreate} />
+        </CardContent>
+      </Card>
 
       {error && (
-        <p
-          role="alert"
-          className="rounded bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300"
-        >
-          {error}
+        <Alert variant="destructive">
+          <CircleAlert aria-hidden="true" />
+          <AlertTitle>{error}</AlertTitle>
+        </Alert>
+      )}
+
+      {loadState === "loading" && (
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
+          読み込み中…
         </p>
       )}
 
-      {loadState === "loading" && <p>読み込み中…</p>}
-
       {loadState === "loaded" && (
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid items-start gap-4 md:grid-cols-3">
           {TASK_STATUSES.map((status) => {
             const columnTasks = tasks.filter((task) => task.status === status);
             return (
               <section
                 key={status}
                 aria-label={STATUS_LABELS[status]}
-                className="flex flex-col gap-3 rounded-lg bg-zinc-100 p-3 dark:bg-zinc-900"
+                className="flex flex-col gap-3 rounded-2xl border bg-muted/60 p-3"
               >
-                <h2 className="font-semibold">
+                <h2 className="flex items-center gap-2 px-1 text-sm font-semibold">
+                  <span
+                    className={cn("size-2 rounded-full", STATUS_DOT_CLASSES[status])}
+                    aria-hidden="true"
+                  />
                   {STATUS_LABELS[status]}
-                  <span className="ml-2 text-sm text-zinc-500">{columnTasks.length}</span>
+                  <Badge variant="secondary" className="ml-auto tabular-nums">
+                    {columnTasks.length}
+                  </Badge>
                 </h2>
                 {columnTasks.length === 0 ? (
-                  <p className="text-sm text-zinc-500">タスクはありません</p>
+                  <p className="rounded-xl border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
+                    タスクはありません
+                  </p>
                 ) : (
                   columnTasks.map((task) => (
                     <TaskCard

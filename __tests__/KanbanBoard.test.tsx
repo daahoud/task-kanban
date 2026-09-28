@@ -298,7 +298,8 @@ describe("KanbanBoard", () => {
       const dialog = screen.getByRole("alertdialog", { name: "タスクの削除" });
       expect(within(dialog).getByText("「買い物」を削除しますか？")).toBeDefined();
       expect(deleteTask).not.toHaveBeenCalled();
-      expect(screen.getByRole("article", { name: "買い物" })).toBeDefined();
+      // モーダル表示中は背景がアクセシビリティツリーから隠れるため hidden を含めて探す
+      expect(screen.getByRole("article", { name: "買い物", hidden: true })).toBeDefined();
     });
 
     it("確認ダイアログで削除するを選ぶと一覧からすぐ消え、ダイアログが閉じる", async () => {
