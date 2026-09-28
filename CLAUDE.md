@@ -44,11 +44,11 @@ npx shadcn@latest add <name>      # shadcn/ui コンポーネントを src/compo
   - クラス名の結合には `@/lib/utils` の `cn()` を使います（shadcn 公式の `cn` パッケージの再エクスポートで、clsx + tailwind-merge の代わりです）。
   - バリアントは `class-variance-authority`（`cva`）で定義します。アニメーションは `tw-animate-css` です。
   - `shadcn init` を再実行すると `globals.css` が上書きされ、`--font-sans: var(--font-sans)` という自己参照と `.dark` クラス方式のダークモードに戻ります。再実行したら、この2点を直してください。
-  - 既存のカンバンのコンポーネントはまだ shadcn/ui を使っておらず、Tailwind のクラス（`zinc` 系や `dark:` バリアント）を直接書いています。shadcn/ui に置き換えるときも、テストが依存するロールとアクセシブルネーム（下記）は変えないでください。
+  - カンバンのコンポーネントは shadcn/ui で組んでいます。見た目のルールは下記「デザインルール」を参照してください。見た目を変えるときも、テストが依存するロールとアクセシブルネーム（下記）は変えないでください。
 - **カンバンの構成:**
   - `src/app/page.tsx` は見出しと `<KanbanBoard />` を並べるだけの Server Component（`async` なし）です。
   - `src/components/KanbanBoard.tsx`（`"use client"`）が、マウント時に `fetchTasks()` でタスクを読み込み、`useState` で一覧を持ちます。追加・更新・削除のあとは API が返した行でローカルの一覧を書き換えるので、再取得しなくても画面にすぐ反映されます。この方針を崩さないでください。
-  - `TaskForm.tsx` は追加フォームと編集フォームで共用します。`onCancel` がなければ追加用として扱い、成功すると入力欄を空に戻します。`TaskCard.tsx` はカードの中で表示と編集フォームを切り替えます。`ConfirmDialog.tsx` は `role="alertdialog"` の自前ダイアログです（`window.confirm` は使いません）。
+  - `TaskForm.tsx` は追加フォームと編集フォームで共用します。`onCancel` がなければ追加用として扱い、成功すると入力欄を空に戻します。`TaskCard.tsx` はカードの中で表示と編集フォームを切り替えます。`ConfirmDialog.tsx` は shadcn/ui の `AlertDialog`（`role="alertdialog"`）を包んだ確認ダイアログです（`window.confirm` は使いません）。呼び出し側が条件付きで描画し、描画中は常に `open` です。
   - ステータスの表示名（Todo / InProgress / Done）は `src/components/statusLabels.ts` の `STATUS_LABELS` にまとめています。
   - エラーメッセージは「タスクの◯◯に失敗しました」の形で `role="alert"` に表示します。
 - **データアクセス層（`src/lib/tasks.ts`）:**
@@ -88,6 +88,21 @@ npx shadcn@latest add <name>      # shadcn/ui コンポーネントを src/compo
     - 関数を作るときは Advisor の警告を避けるため `set search_path = ''` を付けてください。
   - `createSupabaseClient()` は `createClient<Database>` で型付けされています。
 - **`@types/node` のバージョン:** `vitest@5` の peer 依存に合わせて `^24` にしています（Node v24 を使用）。下げると `npm install` が ERESOLVE で失敗します。
+
+## デザインルール
+- **部品は shadcn/ui を使う:** ボタン・入力欄・カード・ダイアログ・通知などは `src/components/ui/` のコンポーネントを使い、素の `<button>` や `<input>` に独自のクラスを書かないでください。必要な部品がなければ `npx shadcn@latest add <name>` で追加します。
+  - ボタン: 主要な操作は `Button`（default）、キャンセルなど副次的な操作は `variant="outline"`、カード内のアイコン操作は `variant="ghost" size="icon-sm"`、削除の確定は `variant="destructive"` です。
+  - エラーメッセージ: 画面全体のエラーは `Alert variant="destructive"`（`role="alert"` 付き）、入力欄の検証エラーは入力欄の直下に `text-destructive` の `<p role="alert">` を置き、入力欄に `aria-invalid` と `aria-describedby` を付けます。
+  - セレクトボックス: テストが `user.selectOptions` で操作するため、ブラウザ標準の `<select>` を使う `NativeSelect` を使います。Base UI の `Select` は使わないでください。
+  - 確認ダイアログ: `AlertDialog` を使います。モーダルの表示中は背景がアクセシビリティツリーから隠れるので、テストで背景の要素を探すときは `{ hidden: true }` を付けてください。
+- **色はトークンで指定する:** `bg-background` / `bg-card` / `bg-muted` / `text-muted-foreground` / `text-destructive` / `border` など shadcn/ui のトークンを使います。`zinc-*` などのパレットの色を直書きしたり、`dark:` バリアントで色を切り替えたりしないでください（ダークモードは `globals.css` の CSS 変数で切り替わります）。例外として、ステータスの色の点だけはパレットの中間色（`sky-500` / `amber-500` / `emerald-500`）を使い、`statusLabels.ts` の `STATUS_DOT_CLASSES` にまとめています。
+- **アイコン:** `lucide-react` を使い、装飾目的なら `aria-hidden="true"` を付けます。アイコンだけのボタンには `aria-label` と `title` で名前を付けます（例: カードの「編集」「削除」）。ボタン内でテキストの前に置くアイコンには `data-icon="inline-start"` を付けます。
+- **レイアウトと見た目:**
+  - ページ全体の背景は `bg-muted/40`、最大幅は `max-w-6xl` です。
+  - カンバンの列は `rounded-2xl border bg-muted/60` のパネル、タスクは `Card size="sm"` で表し、マウスを載せると影を強める（`shadow-xs` → `hover:shadow-md`）程度の控えめな動きにとどめます。
+  - 列の見出しはステータスの色の点・表示名・件数の `Badge variant="secondary"` を並べます。空の列は破線の枠（`border-dashed`）で「タスクはありません」と表示します。
+  - 列はモバイルでは縦に並べ、`md` 以上で3列にします。幅 375px で横スクロールが出ないことを確認してください。
+- **確認方法:** 見た目を変えたら、`npm run dev` で起動し、Playwright MCP でライト・ダーク（`browser_emulate_media` の `colorScheme`）と幅 375px のスクリーンショットを撮って確認します。確認用に作ったタスクは最後に削除して、DB を元の状態に戻してください。
 
 ## コーディングルール
 - 変更後は必ず `npm test` でテストが通ることを確認してください。
